@@ -1,0 +1,77 @@
+name: Update Manifests
+
+on:
+  workflow_dispatch:
+    inputs:
+      INIT:
+        description: '初始化模式'
+        required: false
+        type: boolean
+        default: false
+      users:
+        description: 'Steam账号(逗号分隔)'
+        required: false
+        type: string
+      password:
+        description: '密码(逗号分隔)'
+        required: false
+        type: string
+      ssfn:
+        description: 'ssfn文件'
+        required: false
+        type: string
+      credential_location:
+        description: '凭据位置'
+        required: false
+        type: string
+        default: './data'
+      zfa:
+        description: '两步验证密钥'
+        required: false
+        type: string
+      update:
+        description: '是否更新'
+        required: false
+        type: boolean
+        default: false
+      update_users:
+        description: '需要更新的账号'
+        required: false
+        type: string
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.TOKEN }}
+      
+      - name: Checkout data branch
+        run: |
+          git fetch origin data:data || true
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install steam[client] GitPython requests openpyxl tqdm gevent cryptography
+      
+      - name: Run update
+        env:
+          KEY: ${{ secrets.KEY }}
+        run: |
+          python main.py \
+            --init ${{ inputs.INIT }} \
+            --users "${{ inputs.users }}" \
+            --password "${{ inputs.password }}" \
+            --ssfn "${{ inputs.ssfn }}" \
+            --credential_location "${{ inputs.credential_location }}" \
+            --zfa "${{ inputs.zfa }}" \
+            --update ${{ inputs.update }} \
+            --update_users "${{ inputs.update_users }}"
